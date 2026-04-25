@@ -10,6 +10,7 @@ ORCA_LOCAL_ARCHIVE="${ORCA_LOCAL_ARCHIVE:-${ASSETS_DIR}/${ORCA_ARCHIVE_NAME_DEFA
 ORCA_LOCAL_INSTALLER="${ORCA_LOCAL_INSTALLER:-${ASSETS_DIR}/${ORCA_INSTALLER_NAME_DEFAULT}}"
 ORCA_HOME="/content/orca_${ORCA_VERSION}"
 ALLOW_MOCK_ORCA="${ALLOW_MOCK_ORCA:-1}"
+INSTALLER_LOG="/tmp/orca_installer.log"
 
 resolve_asset_candidates() {
   mkdir -p "${ASSETS_DIR}"
@@ -17,17 +18,13 @@ resolve_asset_candidates() {
   if [[ ! -f "${ORCA_LOCAL_ARCHIVE}" ]]; then
     local alt_archive
     alt_archive=$(find "${ASSETS_DIR}" -maxdepth 1 -type f -name 'orca*_linux*x86-64*shared*.tar.xz' | head -n 1 || true)
-    if [[ -n "${alt_archive}" ]]; then
-      ORCA_LOCAL_ARCHIVE="${alt_archive}"
-    fi
+    [[ -n "${alt_archive}" ]] && ORCA_LOCAL_ARCHIVE="${alt_archive}"
   fi
 
   if [[ ! -f "${ORCA_LOCAL_INSTALLER}" ]]; then
     local alt_installer
     alt_installer=$(find "${ASSETS_DIR}" -maxdepth 1 -type f \( -name 'orca*_linux*x86-64*shared*.run' -o -name 'orca*_linux*x86-64*shared*.sh' \) | head -n 1 || true)
-    if [[ -n "${alt_installer}" ]]; then
-      ORCA_LOCAL_INSTALLER="${alt_installer}"
-    fi
+    [[ -n "${alt_installer}" ]] && ORCA_LOCAL_INSTALLER="${alt_installer}"
   fi
 }
 
@@ -48,31 +45,40 @@ MOCK
   touch "${ORCA_HOME}/.mock_mode"
 }
 
+copy_discovered_orca() {
+  local candidate
+  candidate=$(find /content -maxdepth 6 -type f -name orca | grep -v "/orca_${ORCA_VERSION}/orca" | head -n 1 || true)
+  if [[ -n "$candidate" ]]; then
+    mkdir -p "$ORCA_HOME"
+    cp -r "$(dirname "$candidate")"/* "$ORCA_HOME"/
+  fi
+}
+
 try_install_from_installer() {
   local installer="$1"
   chmod +x "$installer"
+  : > "$INSTALLER_LOG"
   echo "[setup] Trying ORCA installer: $installer"
 
   set +e
-  "$installer" --mode unattended --prefix "$ORCA_HOME" >/tmp/orca_installer.log 2>&1
+  "$installer" --mode unattended --prefix "$ORCA_HOME" >>"$INSTALLER_LOG" 2>&1
   local rc1=$?
-  if [[ $rc1 -ne 0 ]]; then
-    "$installer" --target "$ORCA_HOME" >/tmp/orca_installer.log 2>&1
-  fi
+  "$installer" --target "$ORCA_HOME" >>"$INSTALLER_LOG" 2>&1
+  local rc2=$?
+  "$installer" --noexec --target /content/orca_unpack >>"$INSTALLER_LOG" 2>&1
+  local rc3=$?
+  bash "$installer" --noexec --target /content/orca_unpack2 >>"$INSTALLER_LOG" 2>&1
+  local rc4=$?
   set -e
+
+  [[ -x "$ORCA_HOME/orca" ]] || copy_discovered_orca
 
   if [[ -x "$ORCA_HOME/orca" ]]; then
     return 0
   fi
 
-  local candidate
-  candidate=$(find /content -maxdepth 4 -type f -name orca | head -n 1 || true)
-  if [[ -n "$candidate" ]]; then
-    mkdir -p "$ORCA_HOME"
-    cp -r "$(dirname "$candidate")"/* "$ORCA_HOME"/
-  fi
-
-  [[ -x "$ORCA_HOME/orca" ]]
+  echo "[warn] Installer attempts failed (codes: $rc1, $rc2, $rc3, $rc4)."
+  return 1
 }
 
 install_from_archive() {
@@ -81,7 +87,7 @@ install_from_archive() {
   cp "$archive" /content/downloads/orca_pkg.tar.xz
   tar -xJf /content/downloads/orca_pkg.tar.xz -C /content
   local src_dir
-  src_dir=$(find /content -maxdepth 1 -type d -name 'orca_*_shared_openmpi*' | head -n 1)
+  src_dir=$(find /content -maxdepth 2 -type d -name 'orca_*_shared_openmpi*' | head -n 1)
   [[ -n "$src_dir" ]] || return 1
   mkdir -p "$ORCA_HOME"
   cp -r "$src_dir"/* "$ORCA_HOME"/
@@ -96,6 +102,11 @@ resolve_asset_candidates
 
 echo "[setup] Asset archive candidate: ${ORCA_LOCAL_ARCHIVE}"
 echo "[setup] Asset installer candidate: ${ORCA_LOCAL_INSTALLER}"
+
+had_user_package=0
+if [[ -f "${ORCA_LOCAL_ARCHIVE}" || -f "${ORCA_LOCAL_INSTALLER}" || -n "${ORCA_URL}" ]]; then
+  had_user_package=1
+fi
 
 if [[ ! -x "${ORCA_HOME}/orca" ]]; then
   if [[ -f "${ORCA_LOCAL_ARCHIVE}" ]]; then
@@ -121,7 +132,12 @@ if [[ ! -x "${ORCA_HOME}/orca" ]]; then
   fi
 
   if [[ ! -x "${ORCA_HOME}/orca" ]]; then
-    if [[ "${ALLOW_MOCK_ORCA}" == "1" ]]; then
+    if [[ "$had_user_package" == "1" ]]; then
+      echo "[error] ORCA package was found but installation failed."
+      echo "[hint] See installer log: ${INSTALLER_LOG}"
+      tail -n 40 "${INSTALLER_LOG}" || true
+      exit 4
+    elif [[ "${ALLOW_MOCK_ORCA}" == "1" ]]; then
       create_mock_orca
     else
       echo "[error] Could not install ORCA from assets or ORCA_URL."

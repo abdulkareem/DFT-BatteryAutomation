@@ -54,7 +54,7 @@ def plot_binding(df: pd.DataFrame, out_png: Path) -> None:
 
 def write_manuscript(df: pd.DataFrame, out_md: Path) -> None:
     means = df.groupby("system", as_index=False)[["delta_Eb_kJmol", "gap_eV", "IBO_Li_O", "ESP_F_shield"]].mean()
-    synergy = means[means["system"].str.contains("TFA\)1\(NDT", regex=True, na=False)]
+    synergy = means[means["system"].str.contains(r"TFA\)1\(NDT", regex=True, na=False)]
     synergy_text = "Synergistic case not found in dataset."
     if not synergy.empty:
         row = synergy.iloc[0]

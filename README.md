@@ -39,3 +39,6 @@ If neither is present, the pipeline falls back to mock mode for workflow testing
 
 
 If you still see old `orca_6_0_0...` hints, run `!git pull` in Colab to get the latest installer script.
+
+
+If installer is detected but cannot be unpacked, setup now fails fast and prints `/tmp/orca_installer.log` tail instead of silently switching to mock mode.
