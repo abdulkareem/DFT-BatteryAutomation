@@ -77,3 +77,12 @@ Then verify in Colab:
 ```
 
 If size is still far below expected (e.g., 8 MB), the upload was interrupted or browser-limited; re-upload from a stable connection and avoid closing the tab.
+
+## Important: `conda install orca` is **not** ORCA quantum chemistry
+In conda-forge, `orca` typically refers to a different package name collision (not the licensed ORCA QC binary from the ORCA forum/official distribution).
+
+For this project, use one of these:
+1. Place your licensed ORCA installer/archive in Drive assets and run the provided installer script.
+2. Use mock mode for pipeline testing if licensed binaries are unavailable.
+
+Do **not** rely on `conda install -c conda-forge orca` for ORCA QC production calculations.
