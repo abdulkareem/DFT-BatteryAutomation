@@ -57,16 +57,16 @@ Use this reliable Colab upload flow (uploads to VM first, then copies to Drive):
 ```python
 from google.colab import files
 from pathlib import Path
-import shutil
 
 assets = Path('/content/drive/MyDrive/DFT_Automation/assets')
 assets.mkdir(parents=True, exist_ok=True)
 
 uploaded = files.upload()  # pick your ORCA .run/.tar.xz from local machine
-name = next(iter(uploaded.keys()))
-src = Path('/content') / name
-shutil.copy2(src, assets / name)
-print('Copied:', assets / name)
+name, payload = next(iter(uploaded.items()))
+name = Path(name).name
+out = assets / name
+out.write_bytes(payload)
+print('Saved:', out, 'size=', out.stat().st_size)
 ```
 
 Then verify in Colab:
@@ -77,3 +77,37 @@ Then verify in Colab:
 ```
 
 If size is still far below expected (e.g., 8 MB), the upload was interrupted or browser-limited; re-upload from a stable connection and avoid closing the tab.
+
+## Important: `conda install orca` is **not** ORCA quantum chemistry
+In conda-forge, `orca` typically refers to a different package name collision (not the licensed ORCA QC binary from the ORCA forum/official distribution).
+
+For this project, use one of these:
+1. Place your licensed ORCA installer/archive in Drive assets and run the provided installer script.
+2. Use mock mode for pipeline testing if licensed binaries are unavailable.
+
+Do **not** rely on `conda install -c conda-forge orca` for ORCA QC production calculations.
+
+## Using a Google Drive share link directly
+If you have a share link like:
+`https://drive.google.com/file/d/<FILE_ID>/view?usp=drive_link`
+
+run in Colab:
+
+```bash
+export ORCA_GDRIVE_LINK='https://drive.google.com/file/d/1ff8ky4lNust0m0N0f3EvYd_Tw9Hmx9K2/view?usp=drive_link'
+python src/colab_one_cell_runner.py --run-jobs --analyze
+```
+
+The installer will try `gdown` download automatically from `ORCA_GDRIVE_LINK` if local assets are missing.
+
+## Mounting a specific Google account and saving all outputs
+Colab cannot be forced by script to authenticate a specific Google account. You must sign in manually during `drive.mount(...)` and choose the account (e.g., `abdulkareem@psmocollege.ac.in`).
+
+To force all pipeline outputs into that mounted Drive folder:
+
+```bash
+export DFT_PROJECT_ROOT='/content/drive/MyDrive/DFT_Automation'
+python src/colab_one_cell_runner.py --run-jobs --analyze
+```
+
+All jobs, manifests, analysis CSV/plots, and manuscript outputs are written under `$DFT_PROJECT_ROOT`.
