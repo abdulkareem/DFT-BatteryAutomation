@@ -17,9 +17,16 @@ PROJECT_ROOT = Path("/content/drive/MyDrive/DFT_Automation")
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+class PipelineError(RuntimeError):
+    pass
+
+
 def run(cmd: list[str], cwd: Path | None = None) -> None:
     print("[cmd]", " ".join(cmd))
-    subprocess.run(cmd, cwd=str(cwd) if cwd else None, check=True)
+    try:
+        subprocess.run(cmd, cwd=str(cwd) if cwd else None, check=True)
+    except subprocess.CalledProcessError as exc:
+        raise PipelineError(f"Command failed ({exc.returncode}): {' '.join(cmd)}") from exc
 
 
 def prepare_environment() -> None:
@@ -70,17 +77,26 @@ def main() -> int:
     p.add_argument("--max-jobs", type=int, default=10)
     args = p.parse_args()
 
-    prepare_environment()
-    stage_xyz()
+    try:
+        prepare_environment()
+        stage_xyz()
 
-    if args.run_jobs:
-        run_jobs(max_jobs=args.max_jobs)
+        if args.run_jobs:
+            run_jobs(max_jobs=args.max_jobs)
 
-    if args.analyze:
-        analyze()
+        if args.analyze:
+            analyze()
 
-    print("[done] Pipeline completed.")
-    return 0
+        print("[done] Pipeline completed.")
+        return 0
+    except PipelineError as exc:
+        print("\n[failed] Pipeline aborted.")
+        print(f"[reason] {exc}")
+        print(
+            "[next-step] Ensure ORCA tarball exists at "
+            "/content/drive/MyDrive/DFT_Automation/assets/orca_6_0_0_linux_x86-64_shared_openmpi411.tar.xz"
+        )
+        return 2
 
 
 if __name__ == "__main__":

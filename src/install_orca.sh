@@ -11,6 +11,7 @@ PROJECT_ROOT="/content/drive/MyDrive/DFT_Automation"
 
 ensure_orca_archive() {
   mkdir -p /content/downloads
+  mkdir -p "$(dirname "${ORCA_LOCAL_ARCHIVE}")"
 
   if [[ -f "${ORCA_LOCAL_ARCHIVE}" ]]; then
     echo "[setup] Using local ORCA archive: ${ORCA_LOCAL_ARCHIVE}"
