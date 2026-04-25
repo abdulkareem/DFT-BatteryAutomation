@@ -1,0 +1,11 @@
+! PBEh-3c Opt RIJONX
+%maxcore 2000
+%pal nprocs 4 end
+%geom
+  TolE 1e-6
+  TolRMSG 1e-4
+end
+%output
+  Print[ P_Json ] 1
+end
+* xyzfile 0 1 {{XYZ_FILE}}
