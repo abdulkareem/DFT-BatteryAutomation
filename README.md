@@ -50,3 +50,30 @@ If you see `Unexpected archive size`, re-upload the `.run` file (it is likely tr
 Quick check in Colab:
 `!ls -lh /content/drive/MyDrive/DFT_Automation/assets`
 If the ORCA `.run` is only a few MB (e.g., 8 MB), it is incomplete; re-upload the full file.
+
+## If a 450 MB upload shows as 8 MB in Drive
+Use this reliable Colab upload flow (uploads to VM first, then copies to Drive):
+
+```python
+from google.colab import files
+from pathlib import Path
+import shutil
+
+assets = Path('/content/drive/MyDrive/DFT_Automation/assets')
+assets.mkdir(parents=True, exist_ok=True)
+
+uploaded = files.upload()  # pick your ORCA .run/.tar.xz from local machine
+name = next(iter(uploaded.keys()))
+src = Path('/content') / name
+shutil.copy2(src, assets / name)
+print('Copied:', assets / name)
+```
+
+Then verify in Colab:
+
+```bash
+!python src/verify_orca_asset.py
+!ls -lh /content/drive/MyDrive/DFT_Automation/assets
+```
+
+If size is still far below expected (e.g., 8 MB), the upload was interrupted or browser-limited; re-upload from a stable connection and avoid closing the tab.
