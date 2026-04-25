@@ -8,8 +8,8 @@ Colab-first automation for **Synergistic Fluorinated Amide Additives for Aqueous
 from google.colab import drive
 
 drive.mount('/content/drive')
-!git clone https://github.com/<YOUR_USER>/DFT-Battery-Automation.git
-%cd DFT-Battery-Automation
+!git clone https://github.com/abdulkareem/DFT-BatteryAutomation.git
+%cd DFT-BatteryAutomation
 !python src/colab_one_cell_runner.py --run-jobs --analyze
 ```
 
