@@ -31,7 +31,23 @@ def run(cmd: list[str], cwd: Path | None = None) -> None:
         raise PipelineError(f"Command failed ({exc.returncode}): {' '.join(cmd)}") from exc
 
 
+
+def preflight_orca_assets() -> None:
+    assets = PROJECT_ROOT / "assets"
+    assets.mkdir(parents=True, exist_ok=True)
+    pkgs = list(assets.glob('orca*_linux*x86-64*shared*.run')) + list(assets.glob('orca*_linux*x86-64*shared*.tar.xz'))
+    if not pkgs:
+        return
+    for pkg in pkgs:
+        size = pkg.stat().st_size
+        print(f"[preflight] found {pkg.name} ({size/1024/1024:.1f} MB)")
+        if pkg.suffix in {'.run', '.sh', '.xz'} and size < 50 * 1024 * 1024:
+            raise PipelineError(
+                f"ORCA package appears truncated: {pkg} ({size} bytes). Re-upload full installer/archive."
+            )
+
 def prepare_environment() -> None:
+    preflight_orca_assets()
     orca_bin = ORCA_HOME / "orca"
     if not orca_bin.exists():
         run(["bash", str(REPO_ROOT / "src" / "install_orca.sh")])

@@ -45,3 +45,8 @@ If installer is detected but cannot be unpacked, setup now fails fast and prints
 
 
 If you see `Unexpected archive size`, re-upload the `.run` file (it is likely truncated). The installer now performs `--check` and a minimum size validation before install.
+
+
+Quick check in Colab:
+`!ls -lh /content/drive/MyDrive/DFT_Automation/assets`
+If the ORCA `.run` is only a few MB (e.g., 8 MB), it is incomplete; re-upload the full file.
