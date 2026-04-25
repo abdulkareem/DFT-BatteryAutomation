@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import shutil
 import subprocess
 from pathlib import Path
 
 PROJECT_ROOT = Path("/content/drive/MyDrive/DFT_Automation")
 REPO_ROOT = Path(__file__).resolve().parents[1]
+ORCA_HOME = Path("/content/orca_6.1.1")
 
 
 class PipelineError(RuntimeError):
@@ -30,7 +32,7 @@ def run(cmd: list[str], cwd: Path | None = None) -> None:
 
 
 def prepare_environment() -> None:
-    orca_bin = Path("/content/orca_6.0.0/orca")
+    orca_bin = ORCA_HOME / "orca"
     if not orca_bin.exists():
         run(["bash", str(REPO_ROOT / "src" / "install_orca.sh")])
     else:
@@ -47,13 +49,54 @@ def stage_xyz() -> None:
     print("[stage] Seed XYZ files copied into all job folders.")
 
 
+def _mock_mode() -> bool:
+    return (ORCA_HOME / ".mock_mode").exists()
+
+
+def _orca_exec() -> str:
+    exe = ORCA_HOME / "orca"
+    if exe.exists():
+        return str(exe)
+    return "orca"
+
+
+def generate_mock_results(max_jobs: int = 10) -> None:
+    manifest = json.loads((PROJECT_ROOT / "job_manifest.json").read_text())
+    for i, entry in enumerate(manifest[:max_jobs], start=1):
+        job_dir = PROJECT_ROOT / entry["job_id"]
+        base = -100.0 - i * 0.05
+        payload = {
+            "job_id": entry["job_id"],
+            "system": entry["system"],
+            "energies": {
+                "E_complex": base,
+                "E_Li_plus": -7.20,
+                "E_fragments": base + 0.10,
+            },
+            "orbitals": {
+                "HOMO_eV": -6.2 + random.uniform(-0.2, 0.2),
+                "LUMO_eV": -0.8 + random.uniform(-0.2, 0.2),
+            },
+            "xai": {
+                "IBO_Li_O": 0.45 + random.uniform(-0.05, 0.05),
+                "ESP_F_shield": 0.65 + random.uniform(-0.05, 0.05),
+            },
+        }
+        (job_dir / "result.json").write_text(json.dumps(payload, indent=2))
+
+
 def run_jobs(max_jobs: int = 10) -> None:
     manifest = json.loads((PROJECT_ROOT / "job_manifest.json").read_text())
+    orca_exec = _orca_exec()
     for entry in manifest[:max_jobs]:
         job_dir = PROJECT_ROOT / entry["job_id"]
         print(f"\n=== {entry['job_id']} ({entry['system']}) ===")
-        run(["orca", str(job_dir / "preopt_xtb.inp")], cwd=job_dir)
-        run(["orca", str(job_dir / "job.inp")], cwd=job_dir)
+        run([orca_exec, str(job_dir / "preopt_xtb.inp")], cwd=job_dir)
+        run([orca_exec, str(job_dir / "job.inp")], cwd=job_dir)
+
+    if _mock_mode():
+        print("[mock] Generating synthetic result.json files for analysis.")
+        generate_mock_results(max_jobs=max_jobs)
 
 
 def analyze() -> None:
@@ -93,10 +136,9 @@ def main() -> int:
         print("\n[failed] Pipeline aborted.")
         print(f"[reason] {exc}")
         print(
-            "[next-step] Ensure ORCA tarball exists at "
-            "/content/drive/MyDrive/DFT_Automation/assets/orca_6_0_0_linux_x86-64_shared_openmpi411.tar.xz"
+            "[next-step] For real DFT runs, place ORCA package in "
+            "/content/drive/MyDrive/DFT_Automation/assets/ (run or tar.xz)"
         )
-        print("[next-step] Optionally set ORCA_URL to a direct tar.xz link.")
         return 2
 
 

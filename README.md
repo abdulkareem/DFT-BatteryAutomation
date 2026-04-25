@@ -2,24 +2,12 @@
 
 Colab-first automation for **Synergistic Fluorinated Amide Additives for Aqueous Li-ion Batteries**.
 
-## One-cell Colab launcher (with ORCA upload helper)
+## One-cell Colab launcher (supports ORCA 6.1.1 installer version)
 
 ```python
-from google.colab import drive, files
-from pathlib import Path
-import shutil
+from google.colab import drive
 
 drive.mount('/content/drive', force_remount=True)
-assets = Path('/content/drive/MyDrive/DFT_Automation/assets')
-assets.mkdir(parents=True, exist_ok=True)
-archive = assets / 'orca_6_0_0_linux_x86-64_shared_openmpi411.tar.xz'
-
-if not archive.exists():
-    print('Upload your licensed ORCA tarball now:')
-    uploaded = files.upload()  # choose orca_6_0_0_linux_x86-64_shared_openmpi411.tar.xz
-    name = next(iter(uploaded.keys()))
-    shutil.move(name, archive)
-
 %cd /content
 !rm -rf DFT-BatteryAutomation
 !git clone https://github.com/abdulkareem/DFT-BatteryAutomation.git
@@ -27,14 +15,17 @@ if not archive.exists():
 !python src/colab_one_cell_runner.py --run-jobs --analyze
 ```
 
-## Why previous run failed
-1. The ORCA forum “detail” URL returns HTML when not authenticated; it is not a direct archive link.
-2. Repeated `git clone` without resetting to `/content` can cause nested repo paths.
+### ORCA 6.1.1 package placement
+Put **either** of these into:
+`/content/drive/MyDrive/DFT_Automation/assets/`
 
-The installer now **requires** a local ORCA archive (or an explicit direct `ORCA_URL`) and the launcher uses a fixed clone location.
+- `orca_6_1_1_linux_x86-64_shared_openmpi416.run`  ← installer version
+- `orca_6_1_1_linux_x86-64_shared_openmpi416.tar.xz`  ← archive version
+
+If neither is present, the pipeline falls back to mock mode for workflow testing.
 
 ## Highlights
-- ORCA 6.0 installation and environment setup for Colab.
+- ORCA 6.1.1 installation (archive or installer) with mock fallback.
 - Google Drive persistence at `/content/drive/MyDrive/DFT_Automation/`.
 - 10 parallel job folders (`Job_01` ... `Job_10`) with input factory for:
   - `Li+(H2O)4` (control)
@@ -45,3 +36,6 @@ The installer now **requires** a local ORCA archive (or an explicit direct `ORCA
 - Smart monitor: checks `.out` every 500 s, converges on `MAX GRADIENT < 1e-4`, restarts on 20-cycle energy plateaus with 2° NDT rotation and `.gbw` restart.
 - Analysis for `summary.csv`, binding-energy plot, and `manuscript.md` with methods/results draft.
 - XAI descriptors supported in result schema: IBO Li-O metric and ESP fluorine-shield index.
+
+
+If you still see old `orca_6_0_0...` hints, run `!git pull` in Colab to get the latest installer script.
