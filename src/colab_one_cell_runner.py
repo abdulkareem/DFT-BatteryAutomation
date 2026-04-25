@@ -96,6 +96,7 @@ def main() -> int:
             "[next-step] Ensure ORCA tarball exists at "
             "/content/drive/MyDrive/DFT_Automation/assets/orca_6_0_0_linux_x86-64_shared_openmpi411.tar.xz"
         )
+        print("[next-step] Optionally set ORCA_URL to a direct tar.xz link.")
         return 2
 
 

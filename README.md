@@ -2,15 +2,24 @@
 
 Colab-first automation for **Synergistic Fluorinated Amide Additives for Aqueous Li-ion Batteries**.
 
-## One-cell Colab launcher (idempotent)
-
-> Before running: upload your licensed ORCA tarball to
-> `/content/drive/MyDrive/DFT_Automation/assets/orca_6_0_0_linux_x86-64_shared_openmpi411.tar.xz`
+## One-cell Colab launcher (with ORCA upload helper)
 
 ```python
-from google.colab import drive
+from google.colab import drive, files
+from pathlib import Path
+import shutil
 
 drive.mount('/content/drive', force_remount=True)
+assets = Path('/content/drive/MyDrive/DFT_Automation/assets')
+assets.mkdir(parents=True, exist_ok=True)
+archive = assets / 'orca_6_0_0_linux_x86-64_shared_openmpi411.tar.xz'
+
+if not archive.exists():
+    print('Upload your licensed ORCA tarball now:')
+    uploaded = files.upload()  # choose orca_6_0_0_linux_x86-64_shared_openmpi411.tar.xz
+    name = next(iter(uploaded.keys()))
+    shutil.move(name, archive)
+
 %cd /content
 !rm -rf DFT-BatteryAutomation
 !git clone https://github.com/abdulkareem/DFT-BatteryAutomation.git
@@ -19,10 +28,10 @@ drive.mount('/content/drive', force_remount=True)
 ```
 
 ## Why previous run failed
-1. ORCA forum download links can return an HTML page when authentication is required.
+1. The ORCA forum “detail” URL returns HTML when not authenticated; it is not a direct archive link.
 2. Repeated `git clone` without resetting to `/content` can cause nested repo paths.
 
-The installer now validates archives and the one-cell launcher uses a fixed clone location.
+The installer now **requires** a local ORCA archive (or an explicit direct `ORCA_URL`) and the launcher uses a fixed clone location.
 
 ## Highlights
 - ORCA 6.0 installation and environment setup for Colab.
