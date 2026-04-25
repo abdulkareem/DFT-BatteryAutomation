@@ -54,11 +54,34 @@ copy_discovered_orca() {
   fi
 }
 
+
+validate_installer() {
+  local installer="$1"
+  local size
+  size=$(stat -c%s "$installer" 2>/dev/null || echo 0)
+  if [[ "$size" -lt 50000000 ]]; then
+    echo "[error] Installer appears too small (${size} bytes). Likely incomplete/corrupt upload."
+    return 1
+  fi
+
+  set +e
+  "$installer" --check >>"$INSTALLER_LOG" 2>&1
+  local rc=$?
+  set -e
+  if [[ $rc -ne 0 ]]; then
+    echo "[error] Installer integrity check failed (--check)."
+    return 1
+  fi
+  return 0
+}
+
 try_install_from_installer() {
   local installer="$1"
   chmod +x "$installer"
   : > "$INSTALLER_LOG"
   echo "[setup] Trying ORCA installer: $installer"
+
+  validate_installer "$installer" || return 1
 
   set +e
   "$installer" --mode unattended --prefix "$ORCA_HOME" >>"$INSTALLER_LOG" 2>&1

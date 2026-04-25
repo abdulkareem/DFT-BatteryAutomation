@@ -42,3 +42,6 @@ If you still see old `orca_6_0_0...` hints, run `!git pull` in Colab to get the 
 
 
 If installer is detected but cannot be unpacked, setup now fails fast and prints `/tmp/orca_installer.log` tail instead of silently switching to mock mode.
+
+
+If you see `Unexpected archive size`, re-upload the `.run` file (it is likely truncated). The installer now performs `--check` and a minimum size validation before install.
