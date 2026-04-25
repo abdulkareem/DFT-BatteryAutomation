@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import shutil
 import subprocess
 from pathlib import Path
 
-PROJECT_ROOT = Path("/content/drive/MyDrive/DFT_Automation")
+PROJECT_ROOT = Path(os.environ.get("DFT_PROJECT_ROOT", "/content/drive/MyDrive/DFT_Automation"))
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ORCA_HOME = Path("/content/orca_6.1.1")
 

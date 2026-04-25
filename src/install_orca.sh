@@ -2,7 +2,8 @@
 set -euo pipefail
 
 ORCA_VERSION="6.1.1"
-ASSETS_DIR="/content/drive/MyDrive/DFT_Automation/assets"
+PROJECT_ROOT="${DFT_PROJECT_ROOT:-/content/drive/MyDrive/DFT_Automation}"
+ASSETS_DIR="${PROJECT_ROOT}/assets"
 ORCA_ARCHIVE_NAME_DEFAULT="orca_6_1_1_linux_x86-64_shared_openmpi416.tar.xz"
 ORCA_INSTALLER_NAME_DEFAULT="orca_6_1_1_linux_x86-64_shared_openmpi416.run"
 ORCA_URL="${ORCA_URL:-}"
@@ -214,8 +215,9 @@ export LD_LIBRARY_PATH=${ORCA_HOME}:\$LD_LIBRARY_PATH
 ENV
 
 python3 - <<'PY'
+import os
 from pathlib import Path
-root = Path('/content/drive/MyDrive/DFT_Automation')
+root = Path(os.environ.get('DFT_PROJECT_ROOT', '/content/drive/MyDrive/DFT_Automation'))
 (root / 'assets').mkdir(parents=True, exist_ok=True)
 for i in range(1, 11):
     (root / f'Job_{i:02d}').mkdir(parents=True, exist_ok=True)

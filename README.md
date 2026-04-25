@@ -99,3 +99,15 @@ python src/colab_one_cell_runner.py --run-jobs --analyze
 ```
 
 The installer will try `gdown` download automatically from `ORCA_GDRIVE_LINK` if local assets are missing.
+
+## Mounting a specific Google account and saving all outputs
+Colab cannot be forced by script to authenticate a specific Google account. You must sign in manually during `drive.mount(...)` and choose the account (e.g., `abdulkareem@psmocollege.ac.in`).
+
+To force all pipeline outputs into that mounted Drive folder:
+
+```bash
+export DFT_PROJECT_ROOT='/content/drive/MyDrive/DFT_Automation'
+python src/colab_one_cell_runner.py --run-jobs --analyze
+```
+
+All jobs, manifests, analysis CSV/plots, and manuscript outputs are written under `$DFT_PROJECT_ROOT`.

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -83,4 +84,5 @@ def main(project_root: Path) -> None:
 
 
 if __name__ == "__main__":
-    main(Path("/content/drive/MyDrive/DFT_Automation"))
+    root = Path(os.environ.get("DFT_PROJECT_ROOT", "/content/drive/MyDrive/DFT_Automation"))
+    main(root)
