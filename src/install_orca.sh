@@ -1,48 +1,41 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ORCA_VERSION="6.1.1"
-ORCA_DIST="orca_6_1_1_linux_x86-64_shared_openmpi416.tar.xz"
-ORCA_URL="https://orcaforum.kofo.mpg.de/app.php/dlext/?view=detail&df_id=208"
+ORCA_VERSION="6.0.0"
+ORCA_ARCHIVE="orca_6_0_0_linux_x86-64_shared_openmpi411.tar.xz"
+ORCA_URL="https://orcaforum.kofo.mpg.de/app.php/dlext/?view=detail&df_id=180"
 ORCA_HOME="/content/orca_${ORCA_VERSION}"
-PROJECT_ROOT="/content/drive/My Drive/DFT_Project"
+PROJECT_ROOT="/content/drive/MyDrive/DFT_Automation"
 
-echo "[install_orca] Installing OS dependencies..."
+echo "[setup] apt dependencies"
 apt-get update -y
 apt-get install -y wget tar xz-utils openmpi-bin libopenmpi-dev python3-pip
 
 if [[ ! -d "${ORCA_HOME}" ]]; then
-  echo "[install_orca] Downloading ORCA ${ORCA_VERSION}..."
-  wget -O /content/${ORCA_DIST} "${ORCA_URL}"
+  cd /content
+  wget -O "${ORCA_ARCHIVE}" "${ORCA_URL}"
+  tar -xJf "${ORCA_ARCHIVE}"
+  ORCA_SRC_DIR=$(find /content -maxdepth 1 -type d -name 'orca_*_shared_openmpi*' | head -n 1)
   mkdir -p "${ORCA_HOME}"
-  tar -xJf /content/${ORCA_DIST} -C /content
-  mv /content/orca_*_shared_openmpi416/* "${ORCA_HOME}" || true
+  cp -r "${ORCA_SRC_DIR}"/* "${ORCA_HOME}"/
 fi
 
-echo "[install_orca] Installing Python dependencies (OPI + analysis stack)..."
 python3 -m pip install --upgrade pip
-python3 -m pip install \
-  orca-python-interface \
-  numpy pandas matplotlib pydantic scipy python-docx reportlab jinja2 pyyaml
+python3 -m pip install numpy pandas matplotlib scipy mendeleev pyyaml
 
-cat <<BASHRC >/etc/profile.d/orca.sh
+cat <<ENV >/etc/profile.d/orca.sh
 export ORCA_HOME=${ORCA_HOME}
 export PATH=${ORCA_HOME}:\$PATH
 export LD_LIBRARY_PATH=${ORCA_HOME}:\$LD_LIBRARY_PATH
-BASHRC
-
-export ORCA_HOME="${ORCA_HOME}"
-export PATH="${ORCA_HOME}:${PATH}"
-export LD_LIBRARY_PATH="${ORCA_HOME}:${LD_LIBRARY_PATH:-}"
+ENV
 
 python3 - <<'PY'
 from pathlib import Path
-
-root = Path('/content/drive/My Drive/DFT_Project')
+root = Path('/content/drive/MyDrive/DFT_Automation')
 root.mkdir(parents=True, exist_ok=True)
-for idx in range(1, 11):
-    (root / f'Job_{idx:02d}').mkdir(parents=True, exist_ok=True)
-print('[install_orca] Created persistent job folders in Google Drive.')
+for i in range(1, 11):
+    (root / f'Job_{i:02d}').mkdir(parents=True, exist_ok=True)
+print('Prepared Drive root and 10 job folders.')
 PY
 
-echo "[install_orca] Completed. ORCA path: ${ORCA_HOME}"
+echo "[setup] Done. ORCA at ${ORCA_HOME}"

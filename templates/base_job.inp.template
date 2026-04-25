@@ -1,11 +1,16 @@
-! PBEh-3c Opt RIJONX
-%maxcore 2000
+! PBEh-3c Opt RIJONX CPCM(Water)
+%maxcore 1800
 %pal nprocs 4 end
 %geom
-  TolE 1e-6
-  TolRMSG 1e-4
+  TolMaxG 1e-4
 end
-%output
-  Print[ P_Json ] 1
+%ibo
+  IBO true
 end
-* xyzfile 0 1 {{XYZ_FILE}}
+%plots
+  dim1 80
+  dim2 80
+  dim3 80
+  Format Gaussian_Cube
+end
+* xyzfile 1 1 {{XYZ_FILE}}
