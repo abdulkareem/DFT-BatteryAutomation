@@ -4,14 +4,20 @@ Colab-first automation for **Synergistic Fluorinated Amide Additives for Aqueous
 
 ## One-cell Colab launcher
 
+> Before running: upload your licensed ORCA tarball to
+> `/content/drive/MyDrive/DFT_Automation/assets/orca_6_0_0_linux_x86-64_shared_openmpi411.tar.xz`
+
 ```python
 from google.colab import drive
 
-drive.mount('/content/drive')
+drive.mount('/content/drive', force_remount=True)
 !git clone https://github.com/abdulkareem/DFT-BatteryAutomation.git
 %cd DFT-BatteryAutomation
 !python src/colab_one_cell_runner.py --run-jobs --analyze
 ```
+
+## Why previous run failed
+ORCA forum download links can return an HTML page when authentication is required. The installer now validates the archive and prints a clear hint to use a locally provided tarball in Drive.
 
 ## Highlights
 - ORCA 6.0 installation and environment setup for Colab.

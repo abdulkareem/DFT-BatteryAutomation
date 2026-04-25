@@ -23,7 +23,11 @@ def run(cmd: list[str], cwd: Path | None = None) -> None:
 
 
 def prepare_environment() -> None:
-    run(["bash", str(REPO_ROOT / "src" / "install_orca.sh")])
+    orca_bin = Path("/content/orca_6.0.0/orca")
+    if not orca_bin.exists():
+        run(["bash", str(REPO_ROOT / "src" / "install_orca.sh")])
+    else:
+        print("[setup] Existing ORCA installation detected; skipping installer.")
     run(["python", str(REPO_ROOT / "src" / "job_factory.py")])
 
 
