@@ -2,6 +2,17 @@
 
 Colab-first automation for **Synergistic Fluorinated Amide Additives for Aqueous Li-ion Batteries**.
 
+## One-cell Colab launcher
+
+```python
+from google.colab import drive
+
+drive.mount('/content/drive')
+!git clone https://github.com/<YOUR_USER>/DFT-Battery-Automation.git
+%cd DFT-Battery-Automation
+!python src/colab_one_cell_runner.py --run-jobs --analyze
+```
+
 ## Highlights
 - ORCA 6.0 installation and environment setup for Colab.
 - Google Drive persistence at `/content/drive/MyDrive/DFT_Automation/`.
