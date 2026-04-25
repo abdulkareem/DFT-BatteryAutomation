@@ -1,0 +1,27 @@
+name: DFT Automation Manifests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-manifests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        id: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write job manifest
+        run: |
+          mkdir -p manifests
+          cat > manifests/job_${{ matrix.id }}.json <<JSON
+          {
+            "job_id": "Job_${{ matrix.id }}",
+            "drive_folder": "/content/drive/MyDrive/DFT_Automation/Job_${{ matrix.id }}",
+            "monitor_poll_seconds": 500
+          }
+          JSON
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manifests-${{ matrix.id }}
+          path: manifests/job_${{ matrix.id }}.json
