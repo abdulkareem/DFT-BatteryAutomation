@@ -86,3 +86,16 @@ For this project, use one of these:
 2. Use mock mode for pipeline testing if licensed binaries are unavailable.
 
 Do **not** rely on `conda install -c conda-forge orca` for ORCA QC production calculations.
+
+## Using a Google Drive share link directly
+If you have a share link like:
+`https://drive.google.com/file/d/<FILE_ID>/view?usp=drive_link`
+
+run in Colab:
+
+```bash
+export ORCA_GDRIVE_LINK='https://drive.google.com/file/d/1ff8ky4lNust0m0N0f3EvYd_Tw9Hmx9K2/view?usp=drive_link'
+python src/colab_one_cell_runner.py --run-jobs --analyze
+```
+
+The installer will try `gdown` download automatically from `ORCA_GDRIVE_LINK` if local assets are missing.

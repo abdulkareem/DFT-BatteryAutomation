@@ -6,6 +6,7 @@ ASSETS_DIR="/content/drive/MyDrive/DFT_Automation/assets"
 ORCA_ARCHIVE_NAME_DEFAULT="orca_6_1_1_linux_x86-64_shared_openmpi416.tar.xz"
 ORCA_INSTALLER_NAME_DEFAULT="orca_6_1_1_linux_x86-64_shared_openmpi416.run"
 ORCA_URL="${ORCA_URL:-}"
+ORCA_GDRIVE_LINK="${ORCA_GDRIVE_LINK:-}"
 ORCA_LOCAL_ARCHIVE="${ORCA_LOCAL_ARCHIVE:-${ASSETS_DIR}/${ORCA_ARCHIVE_NAME_DEFAULT}}"
 ORCA_LOCAL_INSTALLER="${ORCA_LOCAL_INSTALLER:-${ASSETS_DIR}/${ORCA_INSTALLER_NAME_DEFAULT}}"
 ORCA_HOME="/content/orca_${ORCA_VERSION}"
@@ -26,6 +27,24 @@ resolve_asset_candidates() {
     alt_installer=$(find "${ASSETS_DIR}" -maxdepth 1 -type f \( -name 'orca*_linux*x86-64*shared*.run' -o -name 'orca*_linux*x86-64*shared*.sh' \) | head -n 1 || true)
     [[ -n "${alt_installer}" ]] && ORCA_LOCAL_INSTALLER="${alt_installer}"
   fi
+}
+
+download_from_gdrive() {
+  local out_path="$1"
+  [[ -n "$ORCA_GDRIVE_LINK" ]] || return 1
+  echo "[setup] Downloading ORCA package from Google Drive link"
+  python3 - <<PY
+import sys
+from pathlib import Path
+try:
+    import gdown
+except Exception:
+    sys.exit(2)
+url = """${ORCA_GDRIVE_LINK}"""
+out = Path("""$out_path""")
+out.parent.mkdir(parents=True, exist_ok=True)
+gdown.download(url=url, output=str(out), quiet=False, fuzzy=True)
+PY
 }
 
 create_mock_orca() {
@@ -127,7 +146,7 @@ echo "[setup] Asset archive candidate: ${ORCA_LOCAL_ARCHIVE}"
 echo "[setup] Asset installer candidate: ${ORCA_LOCAL_INSTALLER}"
 
 had_user_package=0
-if [[ -f "${ORCA_LOCAL_ARCHIVE}" || -f "${ORCA_LOCAL_INSTALLER}" || -n "${ORCA_URL}" ]]; then
+if [[ -f "${ORCA_LOCAL_ARCHIVE}" || -f "${ORCA_LOCAL_INSTALLER}" || -n "${ORCA_URL}" || -n "${ORCA_GDRIVE_LINK}" ]]; then
   had_user_package=1
 fi
 
@@ -140,6 +159,20 @@ if [[ ! -x "${ORCA_HOME}/orca" ]]; then
   if [[ ! -x "${ORCA_HOME}/orca" && -f "${ORCA_LOCAL_INSTALLER}" ]]; then
     echo "[setup] Using local ORCA installer"
     try_install_from_installer "${ORCA_LOCAL_INSTALLER}" || true
+  fi
+
+  if [[ ! -x "${ORCA_HOME}/orca" && -n "${ORCA_GDRIVE_LINK}" ]]; then
+    echo "[setup] Trying ORCA download from ORCA_GDRIVE_LINK"
+    download_from_gdrive /content/downloads/orca_pkg || true
+    if [[ -f /content/downloads/orca_pkg ]]; then
+      if file /content/downloads/orca_pkg | grep -qi 'XZ compressed'; then
+        mv /content/downloads/orca_pkg /content/downloads/orca_pkg.tar.xz
+        install_from_archive /content/downloads/orca_pkg.tar.xz || true
+      else
+        chmod +x /content/downloads/orca_pkg || true
+        try_install_from_installer /content/downloads/orca_pkg || true
+      fi
+    fi
   fi
 
   if [[ ! -x "${ORCA_HOME}/orca" && -n "${ORCA_URL}" ]]; then
@@ -172,7 +205,7 @@ if [[ ! -x "${ORCA_HOME}/orca" ]]; then
 fi
 
 python3 -m pip install --upgrade pip
-python3 -m pip install numpy pandas matplotlib scipy mendeleev pyyaml
+python3 -m pip install gdown numpy pandas matplotlib scipy mendeleev pyyaml
 
 cat <<ENV >/etc/profile.d/orca.sh
 export ORCA_HOME=${ORCA_HOME}
