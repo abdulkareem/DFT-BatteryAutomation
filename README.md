@@ -93,10 +93,13 @@ If you have a share link like:
 
 run in Colab:
 
-```bash
-export ORCA_GDRIVE_LINK='https://drive.google.com/file/d/1ff8ky4lNust0m0N0f3EvYd_Tw9Hmx9K2/view?usp=drive_link'
-python src/colab_one_cell_runner.py --run-jobs --analyze
+```python
+import os
+os.environ['ORCA_GDRIVE_LINK'] = 'https://drive.google.com/file/d/1ff8ky4lNust0m0N0f3EvYd_Tw9Hmx9K2/view?usp=drive_link'
+!python src/colab_one_cell_runner.py --run-jobs --analyze
 ```
+
+(If you prefer shell syntax in Colab, use `%%bash` or `%env`, not plain `export` in a Python cell.)
 
 The installer will try `gdown` download automatically from `ORCA_GDRIVE_LINK` if local assets are missing.
 
@@ -105,9 +108,47 @@ Colab cannot be forced by script to authenticate a specific Google account. You 
 
 To force all pipeline outputs into that mounted Drive folder:
 
-```bash
-export DFT_PROJECT_ROOT='/content/drive/MyDrive/DFT_Automation'
-python src/colab_one_cell_runner.py --run-jobs --analyze
+```python
+import os
+os.environ['DFT_PROJECT_ROOT'] = '/content/drive/MyDrive/DFT_Automation'
+!python src/colab_one_cell_runner.py --run-jobs --analyze
 ```
 
 All jobs, manifests, analysis CSV/plots, and manuscript outputs are written under `$DFT_PROJECT_ROOT`.
+
+## Troubleshooting: `can't open file ... src/colab_one_cell_runner.py`
+This means your current path is not the repository that contains the runner.
+
+Use this in Colab:
+
+```bash
+%cd /content
+!find /content -maxdepth 3 -type f -path '*/src/colab_one_cell_runner.py'
+```
+
+Then `cd` into that repo root and run:
+
+```bash
+%cd /content/DFT-BatteryAutomation
+!python src/colab_one_cell_runner.py --run-jobs --analyze
+```
+
+If your repo folder is named differently (for example `/content/ensemble_higherversion`), make sure it actually contains `src/colab_one_cell_runner.py`.
+
+## Running on Kaggle (yes, with small changes)
+This pipeline can run on Kaggle, but do **not** use Colab-specific `google.colab` mounting code.
+
+Use Kaggle working storage instead:
+
+```python
+import os
+os.environ['DFT_PROJECT_ROOT'] = '/kaggle/working/DFT_Automation'
+# Optional: provide ORCA link if not manually uploaded
+# os.environ['ORCA_GDRIVE_LINK'] = '<your-shared-drive-link>'
+!python src/colab_one_cell_runner.py --run-jobs --analyze
+```
+
+Notes:
+- Kaggle has no Google Drive mount like `/content/drive`; use `/kaggle/working`.
+- For real ORCA runs, upload installer/archive into `$DFT_PROJECT_ROOT/assets` first.
+- If ORCA binary is unavailable, mock mode still allows full workflow validation.
